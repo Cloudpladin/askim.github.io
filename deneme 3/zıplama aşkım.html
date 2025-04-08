@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Frog</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #87CEEB;
+        }
+        #gameArea {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #87CEEB;
+            border: 2px solid #000;
+        }
+        .frog {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background-image: url('frog.png');
+            background-size: cover;
+            top: 50%;
+            left: 50px;
+        }
+        .pipe {
+            position: absolute;
+            width: 60px;
+            background-color: green;
+        }
+        #messageBox {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: white;
+            padding: 20px;
+            border: 2px solid #000;
+            display: none;
+            text-align: center;
+        }
+        #messageBox button {
+            margin: 5px;
+        }
+        #message {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            color: red;
+            font-weight: bold;
+            display: none;
+        }
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Frog</title>
+    <link rel="manifest" href="manifest.json">
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/service-worker.js')
+        .then(() => console.log('Service Worker Registered'))
+        .catch((error) => console.log('Service Worker Registration Failed:', error));
+      }
+    </script>
+</head>
+    </style>
+</head>
+<body>
+    <div id="gameArea">
+        <div id="frog" class="frog">
+            <div id="message">Götünü yalarım</div>
+        </div>
+        <div id="messageBox">
+            <p>Devam etmek ister misin?</p>
+            <button id="yesButton">Evet</button>
+            <button id="noButton">Hayır</button>
+        </div>
+    </div>
+    <script>
+        const gameArea = document.getElementById('gameArea');
+        const frog = document.getElementById('frog');
+        const messageBox = document.getElementById('messageBox');
+        const message = document.getElementById('message');
+        const yesButton = document.getElementById('yesButton');
+        const noButton = document.getElementById('noButton');
+        let frogY = gameArea.clientHeight / 2;
+        let gravity = 0.5;
+        let jump = -15;
+        let pipes = [];
+        let gameInterval;
+        let pipeInterval;
+
+        function startGame() {
+            frogY = gameArea.clientHeight / 2;
+            frog.style.top = frogY + 'px';
+            pipes.forEach(pipe => gameArea.removeChild(pipe.element));
+            pipes = [];
+            messageBox.style.display = 'none';
+            gameInterval = setInterval(updateGame, 20);
+            pipeInterval = setInterval(createPipe, 2000);
+        }
+
+        function updateGame() {
+            frogY += gravity;
+            frog.style.top = frogY + 'px';
+
+            pipes.forEach(pipe => {
+                pipe.x -= 2;
+                pipe.element.style.left = pipe.x + 'px';
+
+                if (pipe.x < -60) {
+                    gameArea.removeChild(pipe.element);
+                    pipes.shift();
+                }
+
+                if (checkCollision(frog, pipe.element)) {
+                    endGame();
+                }
+            });
+
+            if (frogY > gameArea.clientHeight || frogY < 0) {
+                endGame();
+            }
+        }
+
+        function createPipe() {
+            const pipeHeight = Math.random() * (gameArea.clientHeight - 200) + 50;
+            const pipeTop = document.createElement('div');
+            pipeTop.className = 'pipe';
+            pipeTop.style.height = pipeHeight + 'px';
+            pipeTop.style.top = '0px';
+            pipeTop.style.left = '100%';
+
+            const pipeBottom = document.createElement('div');
+            pipeBottom.className = 'pipe';
+            pipeBottom.style.height = (gameArea.clientHeight - pipeHeight - 150) + 'px';
+            pipeBottom.style.bottom = '0px';
+            pipeBottom.style.left = '100%';
+
+            gameArea.appendChild(pipeTop);
+            gameArea.appendChild(pipeBottom);
+
+            pipes.push({ element: pipeTop, x: gameArea.clientWidth });
+            pipes.push({ element: pipeBottom, x: gameArea.clientWidth });
+        }
+
+        function checkCollision(frog, pipe) {
+            const frogRect = frog.getBoundingClientRect();
+            const pipeRect = pipe.getBoundingClientRect();
+
+            return !(
+                frogRect.top > pipeRect.bottom ||
+                frogRect.bottom < pipeRect.top ||
+                frogRect.right < pipeRect.left ||
+                frogRect.left > pipeRect.right
+            );
+        }
+
+        function endGame() {
+            clearInterval(gameInterval);
+            clearInterval(pipeInterval);
+            messageBox.style.display = 'block';
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === ' ') {
+                frogY += jump;
+            }
+        });
+
+        yesButton.addEventListener('click', () => {
+            message.style.display = 'block';
+            setTimeout(() => {
+                message.style.display = 'none';
+                startGame();
+            }, 2000);
+        });
+
+        noButton.addEventListener('click', () => {
+            alert('Oyun Bitti!');
+        });
+
+        startGame();
+    </script>
+</body>
+</html>
